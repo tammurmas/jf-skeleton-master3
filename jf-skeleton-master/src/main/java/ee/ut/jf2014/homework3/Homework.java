@@ -86,8 +86,8 @@ public class Homework {
 		
 		Homework hw = new Homework(s,t);
 		
-		System.out.println("Source: "+hw.source.toString());
-		System.out.println("Target: "+hw.target.toString());
+		log.info("Source: {}",hw.source.toString());
+		log.info("Target: {}",hw.target.toString());
 		
 		//iterate over source dir on startup
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(hw.source)) {
@@ -138,9 +138,10 @@ public class Homework {
 	
 	public void deleteFile(Path path) throws IOException//throws clause needed here???
 	{
+		Logger log = LoggerFactory.getLogger("main");
 		try {
 			Files.delete(path);
-			System.out.println("Deleted \""+path.toString());
+			log.info("Deleted \""+path.toString()+"\"");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -148,10 +149,11 @@ public class Homework {
 	
 	public void copyFile(Path source, Path destination) throws IOException
 	{
+		Logger log = LoggerFactory.getLogger("main");
 		try
 		{
 			Path newPath = Files.copy(source, destination, copyOptions);
-			System.out.println("Copied from \""+source.toString()+"\" to \""+newPath.toString());
+			log.info("Copied from \"{}\" to \"{}\"", source.toString(), newPath.toString());
 		}
 		catch(IOException e)
 		{

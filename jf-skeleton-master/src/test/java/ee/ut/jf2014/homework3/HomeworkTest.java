@@ -1,4 +1,4 @@
-package ee.ut.jf2014.homework1;
+package ee.ut.jf2014.homework3;
 
 import static org.junit.Assert.*;
 
