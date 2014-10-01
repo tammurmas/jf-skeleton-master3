@@ -10,16 +10,21 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.LinkOption;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+
+import static java.nio.file.StandardWatchEventKinds.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Homework {
 	
-	private final Logger log = LoggerFactory.getLogger(getClass());
-	
+	private final WatchService watcher;
 	private final Path source;
 	private final Path target;
+	
 	private static final CopyOption[] copyOptions = new CopyOption[]{
 												  StandardCopyOption.REPLACE_EXISTING,
 												  StandardCopyOption.COPY_ATTRIBUTES
@@ -29,10 +34,14 @@ public class Homework {
 												LinkOption.NOFOLLOW_LINKS
 												};
 	
-	public Homework(Path source, Path target)
+	
+	
+	public Homework(Path source, Path target) throws IOException//try-catch needed here???
 	{
 		this.source = source;
 		this.target = target;
+		this.watcher = FileSystems.getDefault().newWatchService();
+		source.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 	}
 	
 	public static void main(String[] args) throws IOException
@@ -69,7 +78,7 @@ public class Homework {
 		//check target
 		try
 		{
-			t = FileSystems.getDefault().getPath(args[1]).toRealPath(linkOptions);
+			t= FileSystems.getDefault().getPath(args[1]).toRealPath(linkOptions);
 		}
 		catch(InvalidPathException e)
 		{
@@ -131,10 +140,63 @@ public class Homework {
 		    	}
 			}
 		}
+		log.info("Finished startup operations!");
 		
-		
+		hw.processEvents();
 		
 	}//main
+	
+	void processEvents() throws IOException {
+		Logger log = LoggerFactory.getLogger("main");
+		
+		for (;;) {
+			 
+            // wait for key to be signaled
+            WatchKey key;
+            try {
+                key = watcher.take();
+            } catch (InterruptedException x) {
+                return;
+            }
+ 
+            for (WatchEvent<?> event: key.pollEvents()) {
+                WatchEvent.Kind kind = event.kind();
+ 
+                //event lost or discarded
+                if (kind == OVERFLOW) {
+                    continue;
+                }
+                
+                WatchEvent<Path> ev = (WatchEvent<Path>)event;
+                Path filename = this.source.resolve(ev.context());//source file
+                Path tarFile = this.target.resolve(filename.getFileName());//target file
+                
+                if(kind == ENTRY_DELETE)
+                {
+                	if(Files.isRegularFile(tarFile,linkOptions))
+     	    	   	{
+                		this.deleteFile(tarFile);
+     	    	   	}
+                }
+	    		
+                if(kind == ENTRY_CREATE || kind  == ENTRY_MODIFY)
+                {
+                	if(Files.isRegularFile(filename,linkOptions))
+     	    	   	{
+                		this.copyFile(filename,tarFile);
+     	    	   	}
+                }
+	    		
+                log.info("Filename: \"{}\" had event {}",filename.toString(), kind.name());
+            }
+            
+            //reset the key, if key no longer valid dir inaccessible so exit
+            boolean valid = key.reset();
+            if (!valid) {
+                    break;
+            }
+		}
+	}
 	
 	public void deleteFile(Path path) throws IOException//throws clause needed here???
 	{
