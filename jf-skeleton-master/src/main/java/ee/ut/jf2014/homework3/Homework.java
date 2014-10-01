@@ -1,5 +1,6 @@
 package ee.ut.jf2014.homework3;
 
+import java.io.IOError;
 import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.nio.file.DirectoryStream;
@@ -36,8 +37,72 @@ public class Homework {
 	
 	
 	
-	public Homework(Path source, Path target) throws IOException//try-catch needed here???
+	public Homework(String s, String t) throws IOException
 	{
+		Path source = null;
+		Path target = null;
+		
+		//check source
+		try
+		{
+			source = FileSystems.getDefault().getPath(s).toAbsolutePath();
+		}
+		catch(InvalidPathException e)
+		{
+			System.err.println("Source invalid!");
+			e.printStackTrace();
+			System.exit(-1);
+		} catch (IOError e) {
+		    System.err.format("%s%n", e);
+		}
+		
+		if(!Files.exists(source))
+		{
+			System.err.println("Source does not exist!");
+			System.err.println(source.toString());
+			System.exit(-1);
+		}
+		else
+		{
+			if(!Files.isDirectory(source))
+			{
+				System.err.println("Source has to be folder!");
+				System.err.println(source.toString());
+				System.exit(-1);
+			}
+		}
+		
+		
+		//check target
+		try
+		{
+			target = FileSystems.getDefault().getPath(t).toAbsolutePath();
+		}
+		catch(InvalidPathException e)
+		{
+			System.err.println("Target invalid!");
+			e.printStackTrace();
+			System.exit(-1);
+		} catch (IOError e) {
+		    System.err.format("%s%n", e);
+		}
+		
+		if(!Files.exists(target))
+		{
+			Files.createDirectory(target);
+			Logger log = LoggerFactory.getLogger("main");
+			log.info("Created target folder \"{}",target.toString()+"\"");
+		}
+		else
+		{
+			if(!Files.isDirectory(target))
+			{
+				System.err.println("Target has to be folder!");
+				System.exit(-1);
+			}
+		}
+			
+		
 		this.source = source;
 		this.target = target;
 		this.watcher = FileSystems.getDefault().newWatchService();
@@ -54,46 +119,7 @@ public class Homework {
 			System.exit(-1);
 		}
 		
-		Path s = null;
-		Path t = null;
-		
-		//check source
-		try
-		{
-			s = FileSystems.getDefault().getPath(args[0]).toRealPath(linkOptions);
-		}
-		catch(InvalidPathException e)
-		{
-			System.err.println("Source invalid!");
-			e.printStackTrace();
-			System.exit(-1);
-		} catch (NoSuchFileException e) {
-		    System.err.format("%s: no such" + " file or directory%n", s);
-		    e.printStackTrace();
-		    System.exit(-1);//is the correct way to do it???
-		} catch (IOException e) {
-		    System.err.format("%s%n", e);
-		}
-		
-		//check target
-		try
-		{
-			t= FileSystems.getDefault().getPath(args[1]).toRealPath(linkOptions);
-		}
-		catch(InvalidPathException e)
-		{
-			System.err.println("Target invalid!");
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		//target does not exist, create it
-		catch (NoSuchFileException e) {
-			Files.createDirectories(t);
-		} catch (IOException e) {
-		    System.err.format("%s%n", e);
-		}
-		
-		Homework hw = new Homework(s,t);
+		Homework hw = new Homework(args[0],args[1]);
 		
 		log.info("Source: {}",hw.source.toString());
 		log.info("Target: {}",hw.target.toString());
